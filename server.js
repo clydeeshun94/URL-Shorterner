@@ -190,6 +190,10 @@ app.get('/api/urls', async (req, res) => {
   res.json({ urls });
 });
 
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 app.get('/crash', (req, res) => {
   process.exit(1);
 });
