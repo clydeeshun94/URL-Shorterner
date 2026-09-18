@@ -133,20 +133,6 @@ app.get('/:shortCode', async (req, res) => {
   res.redirect(301, urlRow.original_url);
 });
 
-// Middleware for API rate limiting
-async function apiRateLimit(req, res, next) {
-  const userId = req.body?.user_id || req.query?.user_id;
-  if (!userId) {
-    return res.status(400).json({ error: 'user_id required for rate limiting' });
-  }
-  
-  const rateLimit = await checkRateLimit(`api:${userId}`, { limit: 100, window: 60 });
-  if (!rateLimit.allowed) {
-    return res.status(429).json({ error: 'API rate limit exceeded. Try again later.' });
-  }
-  next();
-}
-
 app.get('/api/analytics/:shortCode', async (req, res) => {
   // Get user_id from the URL owner, not from request
   const { shortCode } = req.params;
