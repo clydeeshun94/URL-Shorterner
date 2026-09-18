@@ -198,7 +198,18 @@ app.get('/crash', (req, res) => {
   process.exit(1);
 });
 
-app.listen(PORT, () => {
+const serverInstance = app.listen(PORT, () => {
   console.log(`URL Shortener running on port ${PORT}`);
   console.log(`Crash endpoint: ${CRASH_ENDPOINT}`);
 });
+
+function shutdown() {
+  console.log('Shutting down gracefully...');
+  serverInstance.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
