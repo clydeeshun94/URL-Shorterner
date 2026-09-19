@@ -66,7 +66,7 @@ console.log('  URLs table columns:', schema.urls.join(', '));
 console.log('  Analytics table columns:', schema.analytics.join(', '));
 console.log(`  ✓ Schema has ${schema.urls.length} URL columns and ${schema.analytics.length} analytics columns\n`);
 
-// Test 4: Rate limiter identity format
+// Test 4: Rate limiter identity formats
 console.log('Test 4: Rate limiter identity formats');
 const identities = [
   'create:user123',
@@ -79,6 +79,11 @@ identities.forEach(identity => {
   console.log(`  ${identity}: type="${type}", value="${value}"`);
 });
 
+// Test 5: Rate limiter endpoint
+console.log('\nTest 5: Rate limiter endpoint');
+console.log('  URL: http://localhost:8081/check');
+console.log('  Method: POST');
+console.log('  Body: { identity, algorithm: "fixed_window", policy: { limit, window } }');
+console.log('  Response: { allowed, limit, remaining, retry_after, reset_time }');
+
 console.log('\n=== All tests completed ===');
-console.log('Note: For full integration testing, run the Rate Limiter service separately');
-console.log('and test the actual endpoints with: npm test');

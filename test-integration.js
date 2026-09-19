@@ -43,23 +43,24 @@ function startUrlShortener() {
 // Helper function to start the Rate Limiter (simplified mock for testing)
 function startMockRateLimiter() {
   return new Promise((resolve, reject) => {
-    // Create a simple mock rate limiter server
-    const http = require('http');
+const http = require('http');
+    const requestCounts = new Map();
     const mockServer = http.createServer((req, res) => {
       if (req.method === 'POST' && req.url === '/check') {
         let body = '';
         req.on('data', chunk => body += chunk);
         req.on('end', () => {
           const data = JSON.parse(body);
-          // Mock logic: allow first 5 requests, then deny
-          const requestCount = parseInt(data.identity.split(':')[1]) || 0;
-          const allowed = requestCount < 5;
-          
+          const identity = data.identity || 'unknown';
+          const count = (requestCounts.get(identity) || 0) + 1;
+          requestCounts.set(identity, count);
+          const allowed = count <= 5;
+
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
             allowed,
             limit: 50,
-            remaining: allowed ? 49 - requestCount : 0,
+            remaining: allowed ? 50 - count : 0,
             retryAfter: allowed ? 0 : 60,
             reset_time: new Date(Date.now() + 3600000).toISOString()
           }));

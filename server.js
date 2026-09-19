@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const db = require('./db');
+const { checkRateLimit } = require('./rateLimiter');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -36,6 +37,15 @@ app.post('/api/shorten', async (req, res) => {
     new URL(url);
   } catch (err) {
     return res.status(400).json({ error: 'Invalid URL format' });
+  }
+
+  try {
+    const rlCheck = await checkRateLimit(`create:${user_id}`);
+    if (!rlCheck.allowed) {
+      return res.status(429).json({ error: 'Rate limit exceeded. Try again later.' });
+    }
+  } catch (err) {
+    console.warn('Rate limiter check failed, allowing request:', err.message);
   }
 
   try {
@@ -76,6 +86,15 @@ app.get('/:shortCode', async (req, res) => {
 
   if (!urlRow) {
     return res.status(404).json({ error: 'URL not found' });
+  }
+
+  try {
+    const rlCheck = await checkRateLimit(`redirect:${shortCode}`);
+    if (!rlCheck.allowed) {
+      return res.status(429).json({ error: 'Rate limit exceeded. Try again later.' });
+    }
+  } catch (err) {
+    console.warn('Rate limiter check failed, allowing request:', err.message);
   }
 
   const insertClick = db.prepare(`INSERT INTO analytics (url_id, ip_address, user_agent, referrer) VALUES (?, ?, ?, ?)`);
