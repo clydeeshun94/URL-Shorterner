@@ -2,6 +2,7 @@ const express      = require('express');
 const crypto       = require('crypto');
 const helmet       = require('helmet');
 const cookieParser = require('cookie-parser');
+const { spawn }    = require('child_process');
 const db           = require('./db');
 const { checkRateLimit } = require('./rateLimiter');
 
@@ -15,10 +16,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc:  ["'self'"],
-      scriptSrc:   ["'self'", "'unsafe-inline'"],   // inline JS in index.html
-      styleSrc:    ["'self'", "'unsafe-inline'"],
-      imgSrc:      ["'self'", 'data:'],
-      connectSrc:  ["'self'"],
+      scriptSrc:   ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      styleSrc:    ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+      imgSrc:      ["'self'", "data:", "https://cdn.jsdelivr.net"],
+      connectSrc:  ["'self'", "http://localhost:8080", "http://localhost:5175"],
       frameAncestors: ["'none'"],
     }
   },
@@ -262,6 +263,17 @@ app.get('/health', (req, res) => {
 
 // GET /crash — intentional crash for rate-limiter resilience testing
 app.get('/crash', () => process.exit(1));
+
+// POST /api/rate-limiter/start — restart Rate Limiter process (demo convenience)
+app.post('/api/rate-limiter/start', (req, res) => {
+  const rl = spawn('go', ['run', './cmd/rate-limiter'], {
+    cwd: 'C:\\Users\\zoro\\Desktop\\30\\Rate Limiter',
+    detached: true,
+    stdio: 'ignore',
+  });
+  rl.unref();
+  res.json({ status: 'starting', pid: rl.pid });
+});
 
 // ── Preview page  GET /:shortCode+ ──────────────────────────────────────────
 // The "+" suffix shows a preview instead of redirecting — a standard convention
