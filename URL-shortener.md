@@ -42,7 +42,7 @@ Content-Type: application/json
 
 { "url": "https://example.com/very/long/path", "user_id": "alice" }
 
-→ 200 { "short_code": "a4b9c1", "short_url": "http://localhost:8080/a4b9c1" }
+→ 200 { "short_code": "a4b9c1", "short_url": "http://localhost:5175/a4b9c1" }
 → 429 { "error": "Rate limit exceeded. Try again later." }
 → 400 { "error": "url and user_id are required" }
 ```
@@ -127,11 +127,11 @@ CREATE TABLE analytics (
 
 - Algorithm: `fixed_window`
 - Default limit per user: 50 URLs per 60-minute window
-- The Rate Limiter is started separately on port 8081 with MemoryStorage and default limit 100
+- The Rate Limiter is started separately on port 8080 with MemoryStorage and default limit 100
 
 ### URL Shortener (Node.js)
 
-- Runs on port 8080
+- Runs on port 5175
 - Calls Rate Limiter before creating URLs
 - Stores all URL data in SQLite (`db.sqlite` in project root)
 
@@ -150,8 +150,8 @@ URL-Shorterner/
 
 ## Integration Testing Plan
 
-1. Start Rate Limiter on `:8081` with default config
-2. Start URL Shortener on `:8080`
+1. Start Rate Limiter on `:8080` with default config
+2. Start URL Shortener on `:5175`
 3. Shorten URLs rapidly → verify 429 after limit hit
 4. Hit redirects rapidly → verify rate limiting works
 5. Hit /crash on Rate Limiter → verify URL Shortener gets barraged and either survives (rate limiter ON) or crashes (rate limiter OFF)

@@ -366,8 +366,8 @@ html, body {
   <!-- Notice Banner -->
   <div class="notice">
     <strong>Demo notice:</strong> This URL shortener uses a <code>SQLite</code> database and is designed to crash under a heavy barrage of requests. 
-    The <strong>rate limiter</strong> protects it. Start the rate limiter, then click <strong>Barrage Tester</strong> to overwhelm the system and see what happens. 
-    Reload the page and try again with the rate limiter switched off to see the difference.
+    The <strong>rate limiter</strong> protects it. Toggle the Rate Limiter switch to engage/disengage rate limiting, then click <strong>Barrage Tester</strong> to overwhelm the system and see what happens. 
+    Toggle the Rate Limiter switch off to see the difference.
   </div>
 
   <!-- Shorten Card -->
@@ -408,11 +408,6 @@ html, body {
       <label>Barrage Tester</label>
       <div class="switch" id="barrageSwitch"></div>
       <span id="barrageStatus" style="font-size:13px;color:#888">off</span>
-    </div>
-
-    <div style="display:flex;gap:12px;margin-top:16px;flex-wrap:wrap">
-      <button class="btn btn-danger" id="killBtn">Kill Rate Limiter</button>
-      <button class="btn btn-success" id="onBtn">Start Rate Limiter</button>
     </div>
 
     <div id="barrageLog" class="console" style="display:none"></div>
@@ -653,51 +648,21 @@ function setupLogsWebSocket() {
 }
 setupLogsWebSocket();
 
-// ── Kill / On Switches ──
-document.getElementById('killBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('killBtn');
-  btn.textContent = 'Disabling...';
-  btn.disabled = true;
-  try {
-    await fetch('http://localhost:8080/admin/disable', { method: 'POST' });
-  } catch(e) {}
-  setTimeout(() => {
-    btn.textContent = 'Kill Rate Limiter';
-    btn.disabled = false;
-    document.getElementById('rlStatus').textContent = 'disabled';
-    document.getElementById('rlSwitch').classList.remove('on');
-  }, 1000);
-});
-
-document.getElementById('onBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('onBtn');
-  btn.textContent = 'Starting...';
-  btn.disabled = true;
-  try {
-    const r = await fetch('http://localhost:5175/api/rate-limiter/start', { method: 'POST' });
-    const data = await r.json();
-    document.getElementById('rlStatus').textContent = 'starting (pid ' + data.pid + ')';
-    setTimeout(() => {
-      document.getElementById('rlStatus').textContent = 'running';
-      document.getElementById('rlSwitch').classList.add('on');
-      btn.textContent = 'Start Rate Limiter';
-      btn.disabled = false;
-    }, 5000);
-  } catch(e) {
-    btn.textContent = 'Start Rate Limiter';
-    btn.disabled = false;
-  }
-});
-
 // ── Switch Toggles ──
 function setupSwitch(el, id, callback) {
-  el.addEventListener('click', () => {
+  el.addEventListener('click', async () => {
     el.classList.toggle('on');
-    callback(el.classList.contains('on'));
+    const on = el.classList.contains('on');
+    if (id === 'rl') {
+      try {
+        await fetch('http://localhost:8080/admin/' + (on ? 'enable' : 'disable'), { method: 'POST' });
+      } catch(e) {}
+    }
+    callback(on);
   });
 }
 setupSwitch(document.getElementById('rlSwitch'), 'rl', (on) => {
-  document.getElementById('rlStatus').textContent = on ? 'running' : 'stopped';
+  document.getElementById('rlStatus').textContent = on ? 'engaged' : 'disengaged';
 });
 setupSwitch(document.getElementById('barrageSwitch'), 'barrage', (on) => {
   document.getElementById('barrageStatus').textContent = on ? 'active' : 'off';
@@ -742,12 +707,9 @@ document.getElementById('runBarrageBtn').addEventListener('click', async () => {
   btn.disabled = false;
 });
 
-// ── Initial sid from cookie ──
-state.sid = getSid();
-if (state.sid) {
-  document.getElementById('rlSwitch').classList.add('on');
-  document.getElementById('rlStatus').textContent = 'running';
-}
+// ── Initial state ──
+document.getElementById('rlSwitch').classList.add('on');
+document.getElementById('rlStatus').textContent = 'engaged';
 </script>
 </body>
 </html>

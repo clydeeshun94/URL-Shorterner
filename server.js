@@ -4,7 +4,6 @@ const express      = require('express');
 const crypto       = require('crypto');
 const helmet       = require('helmet');
 const cookieParser = require('cookie-parser');
-const { spawn }    = require('child_process');
 const db           = require('./db');
 const { checkRateLimit } = require('./rateLimiter');
 const { initWebSocket, log: wsLog } = require('./ws');
@@ -262,17 +261,6 @@ app.get('/api/analytics/:shortCode', (req, res) => {
 // GET /health
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: Math.floor(process.uptime()) });
-});
-
-// POST /api/rate-limiter/start — restart Rate Limiter process (demo convenience)
-app.post('/api/rate-limiter/start', (req, res) => {
-  const rl = spawn('go', ['run', './cmd/rate-limiter'], {
-    cwd: 'C:\\Users\\zoro\\Desktop\\30\\Rate Limiter',
-    detached: true,
-    stdio: 'ignore',
-  });
-  rl.unref();
-  res.json({ status: 'starting', pid: rl.pid });
 });
 
 // ── Preview page  GET /:shortCode+ ──────────────────────────────────────────
