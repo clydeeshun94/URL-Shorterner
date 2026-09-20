@@ -80,11 +80,7 @@ GET /api/urls?user_id=alice
 
 ### Crash Endpoint (for testing)
 
-```
-GET /crash
-
-→ Process exits (exit code 1)
-```
+The Rate Limiter exposes `/crash` which fires a barrage of concurrent requests at this service to stress test it. See Rate Limiter docs for usage.
 
 ## Database Schema
 
@@ -114,9 +110,8 @@ CREATE TABLE analytics (
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PORT` | `8080` | Server port |
-| `RATE_LIMIT_CHECK_URL` | `http://localhost:8081/check` | Rate limiter check endpoint |
-| `CRASH_ENDPOINT` | `/crash` | Path for crash test endpoint |
+| `PORT` | `5175` | Server port |
+| `RATE_LIMIT_CHECK_URL` | `http://localhost:8080/check` | Rate limiter check endpoint |
 
 ## Configuration
 
@@ -151,7 +146,7 @@ URL-Shorterner/
 2. Start URL Shortener on `:8080`
 3. Shorten URLs rapidly → verify 429 after limit hit
 4. Hit redirects rapidly → verify rate limiting works
-5. Test crash endpoint → verify service survives (Rate Limiter stays up, URL Shortener restarts)
+5. Hit /crash on Rate Limiter → verify URL Shortener gets barraged and either survives (rate limiter ON) or crashes (rate limiter OFF)
 6. Check analytics accuracy after many clicks
 
 ## Future Enhancements

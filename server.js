@@ -82,7 +82,7 @@ function validateAlias(raw) {
 
 // Paths that can never be used as short codes or aliases
 const RESERVED = new Set([
-  'api', 'health', 'crash', 'public', 'static',
+  'api', 'health', 'public', 'static',
   'favicon.ico', 'robots.txt', 'sitemap.xml',
 ]);
 
@@ -262,9 +262,6 @@ app.get('/api/analytics/:shortCode', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: Math.floor(process.uptime()) });
 });
-
-// GET /crash — intentional crash for rate-limiter resilience testing
-app.get('/crash', () => process.exit(1));
 
 // POST /api/rate-limiter/start — restart Rate Limiter process (demo convenience)
 app.post('/api/rate-limiter/start', (req, res) => {
