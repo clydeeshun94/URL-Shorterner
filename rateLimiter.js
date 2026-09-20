@@ -2,7 +2,7 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
-const RATE_LIMIT_CHECK_URL = process.env.RATE_LIMIT_CHECK_URL || 'http://localhost:8081/check';
+const RATE_LIMIT_CHECK_URL = process.env.RATE_LIMIT_CHECK_URL || 'http://localhost:8080/check';
 
 function checkRateLimit(identity) {
   return new Promise((resolve, reject) => {

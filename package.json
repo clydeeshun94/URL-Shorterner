@@ -10,7 +10,9 @@
     "test:integration": "node test-integration.js"
   },
   "dependencies": {
-    "express": "^4.21.0"
+    "cookie-parser": "1.4.7",
+    "express": "^4.21.0",
+    "helmet": "8.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
