@@ -22,7 +22,7 @@ A lightweight URL shortening service with analytics, built to serve as the test 
 
 ### Rate Limiter Integration Points
 
-The Rate Limiter (Go service on `localhost:8081`) controls three flows:
+The Rate Limiter (Go service on `localhost:8080`) controls three flows:
 
 | Flow | Identity | Rate Limit | Purpose |
 |------|----------|------------|---------|
@@ -81,6 +81,14 @@ GET /api/urls?user_id=alice
 ### Crash Endpoint (for testing)
 
 The Rate Limiter exposes `/crash` which fires a barrage of concurrent requests at this service to stress test it. See Rate Limiter docs for usage.
+
+### WebSocket Events
+
+| Endpoint | Direction | Description |
+|----------|-----------|-------------|
+| `/ws/logs` | Server → Client | Streams server log lines in real time as JSON `{ type: "log", message: "..." }` |
+
+## Rate Limiter Connection
 
 ## Database Schema
 
