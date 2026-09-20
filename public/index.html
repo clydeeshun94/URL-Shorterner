@@ -416,12 +416,13 @@ html, body {
     </div>
 
     <div id="barrageLog" class="console" style="display:none"></div>
+    <div id="liveLogConsole" class="console" style="display:block;max-height:120px;margin-top:8px"></div>
   </div>
 
   <!-- Analytics Card -->
   <div class="card">
     <h2>Rate Limiter Analytics</h2>
-    <p class="desc">Live stats from the rate limiter. Updates every 2 seconds.</p>
+    <p class="desc">Live stats from the rate limiter. Updates in real time.</p>
     <div class="analytics-grid">
       <div class="stat-box">
         <div class="value" id="statAllowed">—</div>
@@ -596,58 +597,74 @@ state.chart = new Chart(ctx, {
   }
 });
 
-async function fetchAnalytics() {
-  try {
-    const r = await fetch('http://localhost:8080/analytics');
-    if (!r.ok) return;
-    const data = await r.json();
-    const collector = data.collector || {};
-
-    let allowed = 0, denied = 0;
-    if (collector.allowed_total) {
-      for (const k in collector.allowed_total) allowed += collector.allowed_total[k];
-    }
-    if (collector.denied_total) {
-      for (const k in collector.denied_total) denied += collector.denied_total[k];
-    }
-
-    document.getElementById('statAllowed').textContent = allowed;
-    document.getElementById('statDenied').textContent = denied;
-    document.getElementById('statTotal').textContent = collector.total_checks || 0;
-    document.getElementById('statAdjuster').textContent = data.adjuster?.running ? 'Active' : 'Off';
-
-    // Update chart
-    const now = new Date().toLocaleTimeString();
-    state.chartData.labels.push(now);
-    state.chartData.allowed.push(allowed);
-    state.chartData.denied.push(denied);
-    if (state.chartData.labels.length > 30) {
-      state.chartData.labels.shift();
-      state.chartData.allowed.shift();
-      state.chartData.denied.shift();
-    }
-    state.chart.data.labels = state.chartData.labels;
-    state.chart.data.datasets[0].data = state.chartData.allowed;
-    state.chart.data.datasets[1].data = state.chartData.denied;
-    state.chart.update('none');
-  } catch(e) {}
-}
-
 setInterval(fetchAnalytics, 2000);
 fetchAnalytics();
+
+// ── Analytics via WebSocket ──
+function setupMetricsWebSocket() {
+  const ws = new WebSocket('ws://localhost:8080/ws/metrics');
+  ws.onmessage = (event) => {
+    try {
+      const collector = JSON.parse(event.data);
+      let allowed = 0, denied = 0;
+      if (collector.allowed_total) {
+        for (const k in collector.allowed_total) allowed += collector.allowed_total[k];
+      }
+      if (collector.denied_total) {
+        for (const k in collector.denied_total) denied += collector.denied_total[k];
+      }
+      document.getElementById('statAllowed').textContent = allowed;
+      document.getElementById('statDenied').textContent = denied;
+      document.getElementById('statTotal').textContent = collector.total_checks || 0;
+      document.getElementById('statAdjuster').textContent = 'Active';
+      const now = new Date().toLocaleTimeString();
+      state.chartData.labels.push(now);
+      state.chartData.allowed.push(allowed);
+      state.chartData.denied.push(denied);
+      if (state.chartData.labels.length > 30) {
+        state.chartData.labels.shift();
+        state.chartData.allowed.shift();
+        state.chartData.denied.shift();
+      }
+      state.chart.data.labels = state.chartData.labels;
+      state.chart.data.datasets[0].data = state.chartData.allowed;
+      state.chart.data.datasets[1].data = state.chartData.denied;
+      state.chart.update('none');
+    } catch(e) {}
+  };
+  ws.onclose = () => { setTimeout(setupMetricsWebSocket, 3000); };
+}
+setupMetricsWebSocket();
+
+// ── Live Logs via WebSocket ──
+function setupLogsWebSocket() {
+  const ws = new WebSocket('ws://localhost:5175/ws/logs');
+  ws.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+      const console = document.getElementById('liveLogConsole');
+      if (data.message && console) {
+        console.innerHTML += data.message + '\n';
+        console.scrollTop = console.scrollHeight;
+      }
+    } catch(e) {}
+  };
+  ws.onclose = () => { setTimeout(setupLogsWebSocket, 3000); };
+}
+setupLogsWebSocket();
 
 // ── Kill / On Switches ──
 document.getElementById('killBtn').addEventListener('click', async () => {
   const btn = document.getElementById('killBtn');
-  btn.textContent = 'Killing...';
+  btn.textContent = 'Disabling...';
   btn.disabled = true;
   try {
-    await fetch('http://localhost:8080/crash');
+    await fetch('http://localhost:8080/admin/disable', { method: 'POST' });
   } catch(e) {}
   setTimeout(() => {
     btn.textContent = 'Kill Rate Limiter';
     btn.disabled = false;
-    document.getElementById('rlStatus').textContent = 'dead';
+    document.getElementById('rlStatus').textContent = 'disabled';
     document.getElementById('rlSwitch').classList.remove('on');
   }, 1000);
 });

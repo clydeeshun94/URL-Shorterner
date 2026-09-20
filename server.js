@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser');
 const { spawn }    = require('child_process');
 const db           = require('./db');
 const { checkRateLimit } = require('./rateLimiter');
+const { initWebSocket, log: wsLog } = require('./ws');
 
 const app  = express();
 const PORT = process.env.PORT || 8080;
@@ -386,10 +387,28 @@ function escHtml(str) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// ── Start ─────────────────────────────────────────────────────────────────────
+// Override console methods to also stream to WebSocket clients
+const _origLog = console.log;
+const _origWarn = console.warn;
+const _origError = console.error;
+console.log = (...args) => {
+  _origLog.apply(console, args);
+  wsLog(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+};
+console.warn = (...args) => {
+  _origWarn.apply(console, args);
+  wsLog('[WARN] ' + args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+};
+console.error = (...args) => {
+  _origError.apply(console, args);
+  wsLog('[ERROR] ' + args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' '));
+};
+
 const server = app.listen(PORT, () => {
   console.log(`snip.ly running on http://localhost:${PORT}`);
 });
+
+initWebSocket(server);
 
 function shutdown(signal) {
   console.log(`[${signal}] Shutting down…`);
