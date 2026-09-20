@@ -1,3 +1,5 @@
+const dotenv = require('dotenv');
+dotenv.config();
 const express      = require('express');
 const crypto       = require('crypto');
 const helmet       = require('helmet');
