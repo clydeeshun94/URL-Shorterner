@@ -80,7 +80,7 @@ GET /api/urls?user_id=alice
 
 ### Crash Endpoint (for testing)
 
-The Rate Limiter exposes `/crash` which fires a barrage of concurrent requests at this service to stress test it. See Rate Limiter docs for usage.
+The Rate Limiter exposes `/crash` which fires an **escalating barrage** of concurrent POST requests at this service to stress test it. Starts at 50 concurrent, doubles each round (up to 800) until the site stops responding. Call `POST /crash` on the Rate Limiter. See Rate Limiter docs for details.
 
 ### WebSocket Events
 

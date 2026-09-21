@@ -451,8 +451,8 @@ html, body {
   <!-- Barrage Tester Card -->
   <div class="card" id="barrageCard" style="display:none">
     <h2>Barrage Tester</h2>
-    <p class="desc">Fires concurrent requests at the rate limiter. Watch the analytics chart react.</p>
-    <button class="btn btn-primary" id="runBarrageBtn">Run Barrage (100 requests)</button>
+    <p class="desc">Asks the rate limiter to attack this site with escalating concurrent requests. Watch the analytics chart react.</p>
+    <button class="btn btn-danger" id="runBarrageBtn">Run Barrage (escalating)</button>
     <div id="barrageResult" class="result" style="display:none"></div>
   </div>
 
@@ -675,32 +675,25 @@ document.getElementById('runBarrageBtn').addEventListener('click', async () => {
   btn.disabled = true;
   btn.textContent = 'Running...';
 
-  let allowed = 0, denied = 0, errors = 0;
-  const total = 100;
+  try {
+    const r = await fetch('http://localhost:8080/crash', { method: 'POST' });
+    const data = await r.json();
 
-  const promises = [];
-  for (let i = 0; i < total; i++) {
-    promises.push(
-      fetch('http://localhost:5175/api/shorten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: 'https://barrage-test-' + i + '.com' })
-      }).then(r => {
-        if (r.status === 429) denied++;
-        else if (r.ok) allowed++;
-        else errors++;
-      })
-    );
+    log.innerHTML += `Rate limiter attacked the site with escalating barrage...\n`;
+
+    if (data.rounds && data.rounds.length) {
+      for (const round of data.rounds) {
+        log.innerHTML += `Round ${round.round}: ${round.concurrent} concurrent → ${round.total_requests} requests hit, ${round.errors} errors — target ${round.target_alive ? 'ALIVE' : 'DOWN'}\n`;
+      }
+    }
+
+    document.getElementById('barrageResult').style.display = 'block';
+    document.getElementById('barrageResult').innerHTML = `Total: ${data.total_requests} requests, ${data.errors} errors, ${data.rounds ? data.rounds.length : 0} rounds`;
+  } catch(e) {
+    log.innerHTML += `Failed to reach rate limiter: ${e.message}\n`;
   }
 
-  log.innerHTML += 'Firing ' + total + ' concurrent requests...\n';
-  await Promise.all(promises);
-
-  log.innerHTML += `Done: ${allowed} allowed, ${denied} rate-limited, ${errors} errors\n`;
-  document.getElementById('barrageResult').style.display = 'block';
-  document.getElementById('barrageResult').innerHTML = `Allowed: ${allowed} | Rate-limited: ${denied} | Errors: ${errors}`;
-
-  btn.textContent = 'Run Barrage (100 requests)';
+  btn.textContent = 'Run Barrage (escalating)';
   btn.disabled = false;
 });
 
