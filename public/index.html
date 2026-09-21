@@ -592,9 +592,6 @@ state.chart = new Chart(ctx, {
   }
 });
 
-setInterval(fetchAnalytics, 2000);
-fetchAnalytics();
-
 // ── Analytics via WebSocket ──
 function setupMetricsWebSocket() {
   const ws = new WebSocket('ws://localhost:8080/ws/metrics');
