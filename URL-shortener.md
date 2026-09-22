@@ -90,6 +90,15 @@ The Rate Limiter exposes `/crash` which fires an **escalating barrage** of concu
 
 ## Rate Limiter Connection
 
+The URL Shortener integrates with the Rate Limiter (Go service on `localhost:8080`) for protection:
+
+- **Before creating URLs:** Calls `/check` to verify the request is within rate limits
+- **Barrage testing:** The frontend calls `POST /crash` on the Rate Limiter to stress test the service
+- **Admin control:** `/admin/enable` and `/admin/disable` toggle rate limiting (requires `Authorization: Bearer <token>`)
+- **Metrics:** `/ws/metrics` provides real-time metrics via WebSocket
+
+When rate limiting is disabled, requests pass through without checking. When enabled, requests exceeding limits receive `429 Too Many Requests`.
+
 ## Database Schema
 
 ```sql
